@@ -39,7 +39,7 @@ class Gene
       @cost += Math.pow((@code.charCodeAt(i) - compareTo.charCodeAt(i)), 2)
 
 class Population
-  constructor: (@goal, @size)->
+  constructor: (@goal, @size, @elitism)->
     @generationNumber = 0
     @members = for i in [0...@size]
       gene = new Gene()
@@ -54,10 +54,27 @@ class Population
     for i in [0...@members.length]
       console.log "#{@members[i].code} (#{@members[i].cost})"
 
+  random_gene: ->
+    gene = new Gene()
+    gene.random(@goal.length)
+    gene
+    
+  fill: ->
+    while @members.length < @size
+      @mate()
+
+  kill: ->
+    num_survive = Math.floor @size * @elitism
+    @sort()
+    @members = @members[0...num_survive]
 
   sort: ->
     @members.sort (a,b)->
       a.cost - b.cost
+
+  mate: ->
+    children = @members[0].mate @members[1]
+    @members = @members.concat children
 
   generation: ->
     for member in @members
@@ -65,12 +82,10 @@ class Population
 
     @sort()
     @display()
-
-    children1 = @members[0].mate @members[1]
-    children2 = @members[2].mate @members[3]
-
-    @members.splice(@members.length - 2, 2, children1...)
-    @members.splice(@members.length - 4, 2, children2...)
+    @mate()
+    
+    @kill()
+    @fill()
 
     for member in @members
       member.mutate 0.5
@@ -86,5 +101,5 @@ class Population
       @generation()
     , 5
     
-population = new Population("The cake is a lie ~!", 20)
+population = new Population("The cake is a lie", 20, 0.3)
 population.generation()
